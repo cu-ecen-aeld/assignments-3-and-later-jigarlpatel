@@ -1,27 +1,23 @@
-# Compiler options
-CC = $(CROSS_COMPILE)gcc
-CFLAGS = -Wall -Wextra
+# Makefile for Assignment 2
 
-# Target executable
+CC = gcc
 TARGET = writer
 
-# Source files
-SRCS = writer.c
+# check if CROSS_COMPILER is set or not
+ifdef CROSS_COMPILE
+    CC := $(CROSS_COMPILE)gcc
+endif
 
-# Object files
-OBJS = $(SRCS:.c=.o)
 
-# Default target
-.PHONY: all
-	all: $(TARGET)
+# build application
+all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+$(TARGET): writer.o
+	$(CC) writer.o -o $(TARGET)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+writer.o: writer.c
+	$(CC) -c writer.c
 
-# Clean target
-.PHONY: clean
+# removes the application and all .o files
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) *.o
