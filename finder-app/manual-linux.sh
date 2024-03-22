@@ -113,7 +113,7 @@ echo "Copy scrips and executables to rootfs/home"
 cp finder-test.sh finder.sh writer ${OUTDIR}/rootfs/home
 
 mkdir ${OUTDIR}/rootfs/home/conf
-cp conf/username.txt conf/assignment.txt ${OUTDIR}/rootfs/home/conf
+cp conf/username.txt conf/assignment.txt ${OUTDIR}/rootfs/home
 
 cp autorun-qemu.sh ${OUTDIR}/rootfs/home
 
