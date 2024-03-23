@@ -7,8 +7,8 @@ set -u
 
 OUTDIR=/home/jigar/Documents/LinuxCourse/Assignment3Image/
 KERNEL_REPO=git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
-KERNEL_VERSION=v5.1.10
-BUSYBOX_VERSION=1_33_1
+KERNEL_VERSION=linux-6.6.y
+BUSYBOX_VERSION=1_36_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
@@ -33,7 +33,8 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     cd linux-stable
     echo "Checking out version ${KERNEL_VERSION}"
     git checkout ${KERNEL_VERSION}
-    git apply ${FINDER_APP_DIR}/dtc-lexer.patch
+    #echo "Appling patch from script"
+    #git apply ${FINDER_APP_DIR}/dtc-lexer.patch
 
     # TODO: Add your kernel build steps here
     make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- mrproper
