@@ -137,12 +137,11 @@ int main(int argc, char* argv[])
                     printf("Error while write in file -> %s\n", strerror(errno));
                     FailOnExit();
                 }
-
-                
+                printf("Write data scussfully \n");                
             }while(packetComplete == false);
 
             //Now send data to Client
-   
+            packetComplete = false;
             lseek(fd,0,SEEK_SET);
             printf("******** Now Sending data to Client ******* \n");
             do
@@ -161,7 +160,12 @@ int main(int argc, char* argv[])
                     printf("Complete Reading file send finish\n");
                     packetComplete = true;
                 }else{
-                    send(acceptedSocket,rxBuff,numberOfByteRead,0);
+                    int byteSent = send(acceptedSocket,rxBuff,numberOfByteRead,0);
+                    if(byteSent == -1)
+                    {
+                        printf("Error during send() \n");
+                        FailOnExit();
+                    }
                 }
             }while(packetComplete == false);
 
