@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <netdb.h>
+#include <errno.h>
 
 
 #define MAX_BUFFER_SIZE 2048
@@ -78,6 +79,10 @@ int main(int argc, char* argv[])
         syslog(LOG_INFO, "listen failed \n");
         printf("listen failed \n");
     }
+    else{
+        syslog(LOG_INFO, "listen call done \n");
+        printf("listen call done \n");
+    }
     
     
     while(1)
@@ -91,10 +96,10 @@ int main(int argc, char* argv[])
 
             syslog(LOG_INFO, "accept pass \n");
             printf("accept pass \n");
-            fd = open("/var/tmp/aesdsocketdata",O_CREAT|O_APPEND|O_RDWR);
+            fd = open("/tmp/var/aesdsocketdata",O_CREAT | O_APPEND | O_RDWR, S_IRWXU | S_IRGRP | S_IROTH);
             if(fd == -1)
             {
-                syslog(LOG_INFO, "Error Creating/opening file\n");
+                syslog(LOG_INFO, "Error Creating/opening file -> %s\n", strerror(errno));
                 printf("Error Creating/opening file\n");
             }
 
@@ -104,15 +109,15 @@ int main(int argc, char* argv[])
                 int noOfBytesReceived = recv(acceptedSocket,rxBuff,MAX_BUFFER_SIZE,0);
                 if(noOfBytesReceived == -1)
                 {
-                    syslog(LOG_INFO, "Error in recv() \n");
-                    printf("Error in recv() \n");
+                    syslog(LOG_INFO, "Error in recv() -> %s\n", strerror(errno));
+                    printf("Error in recv() -> %s\n", strerror(errno));
                     FailOnExit();
                 }
 
                 if(write(fd,rxBuff,noOfBytesReceived) == -1)
                 {
-                    syslog(LOG_INFO, "Error while write in file \n");
-                    printf("Error while write in file \n");
+                    syslog(LOG_INFO, "Error while write in file -> %s\n", strerror(errno));
+                    printf("Error while write in file -> %s\n", strerror(errno));
                     FailOnExit();
                 }
 
@@ -127,13 +132,14 @@ int main(int argc, char* argv[])
             //Now send data to Client
             int sendFinish = 0;
             lseek(fd,0,SEEK_SET);
+            printf("******** Now Sending data to Client ******* \n");
             while(sendFinish == 0)
             {
                 int numberOfByteRead = read(fd,rxBuff,MAX_BUFFER_SIZE);
                 if(numberOfByteRead == -1)
                 {
-                    syslog(LOG_INFO, "error while read file\n");
-                    printf("error while read file \n");
+                    syslog(LOG_INFO, "error while read file -> %s\n", strerror(errno));
+                    printf("error while read file -> %s\n", strerror(errno));
                     FailOnExit();
                 }
 
@@ -174,7 +180,8 @@ void connectSocket(void)
     }
 
     //Now create socket
-    if(socket(results->ai_family,results->ai_socktype,results->ai_protocol) == -1)
+    sFD = socket(results->ai_family,results->ai_socktype,results->ai_protocol);
+    if(sFD == -1)
     {
         syslog(LOG_ERR, "Error from socket call\n");
         printf("Error from socket call\n");
