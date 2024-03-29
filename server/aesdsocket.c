@@ -15,12 +15,14 @@
 
 
 #define MAX_BUFFER_SIZE 2048
-
+#define FILE_PATH "/var/tmp/aesdsocketdata"
 int sFD;
 int fd;
 char rxBuff[MAX_BUFFER_SIZE];
 struct sockaddr incomingAddr;
 socklen_t incomingAddrLength = 0;
+int numberOfByteRead;
+int packetComplete = 0;
 static void mysignalhandler(int sigNum);
 static void FailOnExit(void);
 void connectSocket(void);
@@ -28,8 +30,9 @@ void connectSocket(void);
 void mysignalhandler(int sigNum)
 {
     syslog(LOG_INFO, "Received Signal %d\n",sigNum);
-    printf("Received Signal %d\n",sigNum);
+    printf("***** Received Signal ****** %d\n",sigNum);
     shutdown(sFD,SHUT_RDWR);
+    remove(FILE_PATH);
     closelog();
     exit(EXIT_SUCCESS);
 }
@@ -38,7 +41,8 @@ static void FailOnExit(void)
 {
     close(fd);
     closelog();
-
+    shutdown(sFD,SHUT_RDWR);
+    remove(FILE_PATH);
     exit(EXIT_FAILURE);
 }
 
@@ -48,21 +52,26 @@ static void FailOnExit(void)
 int main(int argc, char* argv[])
 {
 
-
+    printf("Started aesdsocket \n");
     signal(SIGINT, mysignalhandler);
     signal(SIGTERM, mysignalhandler);
     
     connectSocket();
+    printf("connectSocket function done \n");
     if(argc > 1)
     {
-        if(strcmp(argv[1],"-d"))
+        if(!strcmp(argv[1],"-d"))
         {
+            printf("Trying to run witn -d \n");
             pid_t pid = fork();
-            if(pid == -1 || pid > 0)
+            if(pid == -1)
             {
                 syslog(LOG_INFO, "Error creating demon \n");
                 printf("Error creating demon \n");
                 FailOnExit();
+            }else if(pid >0)
+            {
+                exit(EXIT_SUCCESS);
             }else{
                 setsid();
                 chdir("/");
@@ -96,15 +105,16 @@ int main(int argc, char* argv[])
 
             syslog(LOG_INFO, "accept pass \n");
             printf("accept pass \n");
-            fd = open("/tmp/var/aesdsocketdata",O_CREAT | O_APPEND | O_RDWR, S_IRWXU | S_IRGRP | S_IROTH);
+            fd = open(FILE_PATH,O_CREAT | O_APPEND | O_RDWR, S_IRWXU | S_IRGRP | S_IROTH);
             if(fd == -1)
             {
                 syslog(LOG_INFO, "Error Creating/opening file -> %s\n", strerror(errno));
                 printf("Error Creating/opening file\n");
+                FailOnExit();
             }
 
-            int receivedFinish = 0;
-            while(receivedFinish == 0)
+            packetComplete = false;
+            do
             {
                 int noOfBytesReceived = recv(acceptedSocket,rxBuff,MAX_BUFFER_SIZE,0);
                 if(noOfBytesReceived == -1)
@@ -114,6 +124,13 @@ int main(int argc, char* argv[])
                     FailOnExit();
                 }
 
+                if(strchr(rxBuff,'\n') != NULL)
+                {
+                    packetComplete = true;
+                    syslog(LOG_INFO, "received Finish\n");
+                    printf("received Finish \n");
+                }
+
                 if(write(fd,rxBuff,noOfBytesReceived) == -1)
                 {
                     syslog(LOG_INFO, "Error while write in file -> %s\n", strerror(errno));
@@ -121,21 +138,16 @@ int main(int argc, char* argv[])
                     FailOnExit();
                 }
 
-                if(strchr(rxBuff,'\n') != NULL)
-                {
-                    receivedFinish = 1;
-                    syslog(LOG_INFO, "received Finish\n");
-                    printf("received Finish \n");
-                }
-            }
+                
+            }while(packetComplete == false);
 
             //Now send data to Client
-            int sendFinish = 0;
+   
             lseek(fd,0,SEEK_SET);
             printf("******** Now Sending data to Client ******* \n");
-            while(sendFinish == 0)
+            do
             {
-                int numberOfByteRead = read(fd,rxBuff,MAX_BUFFER_SIZE);
+                numberOfByteRead = read(fd,rxBuff,MAX_BUFFER_SIZE);
                 if(numberOfByteRead == -1)
                 {
                     syslog(LOG_INFO, "error while read file -> %s\n", strerror(errno));
@@ -144,14 +156,14 @@ int main(int argc, char* argv[])
                 }
 
                 if(numberOfByteRead == 0)
-                {
+                {                    
                     syslog(LOG_INFO, "Complete Reading file  send finish\n");
                     printf("Complete Reading file send finish\n");
-                    sendFinish = 1;
+                    packetComplete = true;
                 }else{
                     send(acceptedSocket,rxBuff,numberOfByteRead,0);
                 }
-            }
+            }while(packetComplete == false);
 
             close(fd);
         }
