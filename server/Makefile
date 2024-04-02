@@ -1,4 +1,4 @@
-CC := gcc
+CC := aarch64-none-linux-gnu-gcc
 TARGET := aesdsocket
 CFLAGS := -Wall -Wextra
 
