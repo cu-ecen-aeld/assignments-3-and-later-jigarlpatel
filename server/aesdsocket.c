@@ -30,7 +30,7 @@ void connectSocket(void);
 void mysignalhandler(int sigNum)
 {
     syslog(LOG_INFO, "Received Signal %d\n",sigNum);
-    printf("***** Received Signal ****** %d\n",sigNum);
+    printf("***** Received Signal ** ****** %d\n",sigNum);
     shutdown(sFD,SHUT_RDWR);
     remove(FILE_PATH);
     closelog();

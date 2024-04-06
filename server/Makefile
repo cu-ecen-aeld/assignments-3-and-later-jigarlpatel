@@ -1,6 +1,7 @@
 
 CC = gcc
 TARGET = aesdsocket
+CROSS_COMPILE = aarch64-none-linux-gnu-
 
 # check if CROSS_COMPILER is set or not
 ifdef CROSS_COMPILE
